@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+    <head>
+        <meta charset="UTF-8">
+        <title>CCNA1</title>
+        <style>
+        /* ==========================================================================
+        CCNA 題庫卡片風美化樣式
+        ========================================================================== */
+        /* ==========================================================================
+        頂端固定統計欄樣式
+        ========================================================================== */
+        #sticky-counter {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000; /* 確保固定欄在最上層，不會被題目卡片遮住 */
+            padding: 15px 0;
+            border-bottom: 3px solid #ef4444; /* 紅色下邊框，提示是錯題統計 */
+        }
+
+        .counter-content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e293b;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        #wrong-count {
+            color: #ef4444; /* 數字顯示為紅色 */
+            font-size: 22px;
+            margin-left: 5px;
+        }
+
+        /* ⚠️ 關鍵：因為頂端欄固定了，body 需要加上 padding-top 避免第一題被遮擋 */
+        body {
+            padding-top: 80px !important; 
+        }
+        /* 網頁整體背景與字型 */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fb;
+            margin: 0;
+            padding: 30px 15px;
+            color: #333;
+        }
+
+        /* 讓原本的 table 隱形，改用現代卡片式排版 */
+        #quizTable {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            border-collapse: separate;
+            border-spacing: 0 20px; /* 關鍵：讓每一題（每一行 tr）之間有 20px 的間距 */
+        }
+
+        /* 隱藏傳統的表格表頭（因為題目卡片不需要欄位標題） */
+        #quizTable thead {
+            display: none;
+        }
+
+        /* 題目卡片本體 (每一題的方框包裹) */
+        #quizTable tbody tr {
+            display: flex;
+            flex-direction: column; /* 讓內容由上往下依序排列 */
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+
+        /* 滑鼠移到題目卡片上有淡淡的浮起效果 */
+        #quizTable tbody tr:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 重新定義單格 (td) 的寬度與排版 */
+        #quizTable td {
+            display: block;
+            width: 100% !important;
+            padding: 0;
+            margin: 0;
+            border: none;
+            text-align: left !important;
+        }
+
+        /* 1. 正確答案欄位樣式 */
+        #quizTable td[id^="ans_col_"] {
+            font-size: 14px;
+            font-weight: 600;
+            padding: 6px 12px;
+            background-color: #f8fafc;
+            border-radius: 6px;
+            width: fit-content !important;
+            margin-bottom: 12px;
+            border: 1px dashed #cbd5e1;
+        }
+
+        /* 2. 題目文字樣式 */
+        #quizTable td.question-text {
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 1.6;
+            color: #1e293b;
+            margin-bottom: 16px;
+            border-bottom: 2px solid #edf2f7; /* 題目與選項之間的水平分割線 */
+            padding-bottom: 12px;
+        }
+
+        /* 3. 選項按鈕美化 (方框包裹、點擊範圍變大) */
+        #quizTable td button {
+            display: block;
+            width: 100% !important;
+            text-align: left !important; /* 確保按鈕內文字絕對靠左 */
+            justify-content: flex-start !important; /* 防止某些瀏覽器彈性盒置中 */
+            padding: 12px 20px !important;
+            margin-bottom: 8px;
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 8px !important;
+            font-size: 18px;
+            color: #475569;
+            font-family: monospace; /* 適合閱讀 Cisco 指令 */
+            white-space: pre-line;  /* 保持指令與題目的正常換行 */
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        /* 滑鼠移到選項按鈕上的變色效果 */
+        #quizTable td button:hover {
+            background-color: #f0f7ff;
+            border-color: #3b82f6 !important;
+            color: #1d4ed8;
+        }
+
+        /* 空的選項欄位隱藏，避免畫出空的按鈕 */
+        #quizTable td:has(button:empty),
+        #quizTable td button:empty {
+            display: none;
+        }
+
+        /* 4. 標記勾選方塊樣式 (移到卡片右上角) */
+        #quizTable td:has(input[type="checkbox"]) {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: auto !important;
+        }
+
+        #quizTable input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        </style>
+    </head>
+    <body>
+        <div id="sticky-counter">
+            <div class="counter-content">
+                <span>❌ 錯題標記總數：<strong id="wrong-count">0</strong></span>
+            </div>
+        </div>
+        <table id="quizTable">
+            <thead>
+                <tr id="tableHeader">
+                    <th>正確答案</th>
+                    <th>題目</th>
+                    <th>選項一</th>
+                    <th>選項二</th>
+                    <th>選項三</th>
+                    <th>選項四</th>
+                    <th>選項五</th>
+                    <th>選項六</th>
+                    <th>選項七</th>
+                    <th>選項八</th>
+                    <th id="markColumn">標記</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"><tr><td id="ans_col_1" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">A manager asks a network engineer to advise which cloud service models are used so employees do not have to waste their time installing, managing, and updating software which is only used occasionally. Which cloud service model does the engineer recommend?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '1')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. infrastructure-as-a-service
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '1')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. platform-as-a-service
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '1')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. business process as service to support different types of service
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'D', '1')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. software-as-a-service Correct Answer: D --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_1"></td></tr><tr><td id="ans_col_2" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">What is a practice that protects a network from VLAN hopping attacks?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'C', '2')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. Enable dynamic ARP inspection
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'C', '2')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. Configure an ACL to prevent traffic from changing VLANs
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'C', '2')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. Change native VLAN to an unused VLAN ID
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'C', '2')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. Implement port security on internet-facing VLANs Correct Answer: C --[PAGE_BREAK]-- ‘site Bi --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_2"></td></tr><tr><td id="ans_col_3" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Where does the configuration reside when a helper address is configured to support DHCP?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'B', '3')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. on the router closest to the server
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'B', '3')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. on the router closest to the client
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'B', '3')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. on every router along the path
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'B', '3')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. on the switch trunk interface Correct Answer: B --[PAGE_BREAK]-- --[PAGE_BREAK]-- ‘broadcast'address: default gateway: last assignable. ‘address ‘inthe “ subnet: *etworkaddress --[PAGE_BREAK]-- 192:16871:20:
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_3"></td></tr><tr><td id="ans_col_4" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">What Is the path for traffic sent from one user workstation to another workstation on a separate switch In a Ihree-Iter architecture model?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '4')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. access — core — distribution — access
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '4')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. access — distribution — distribution — access
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '4')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. access — core — access
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'D', '4')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. access -distribution — core — distribution — access Correct Answer: D --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_4"></td></tr><tr><td id="ans_col_5" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which device permits or denies network traffic based on a set of rules?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'B', '5')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. access point
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'B', '5')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. firewall
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'B', '5')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. wireless controller
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'B', '5')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. switch Correct Answer: B --[PAGE_BREAK]-- “eorinects’l: Correct'AnswerzA:. --[PAGE_BREAK]-- * fifaditional Device Management: --[PAGE_BREAK]-- CASUAL --[PAGE_BREAK]-- 2 IntiGOWO - 124 hh he I 4 | --[PAGE_BREAK]--
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'E', 'B', '5')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. R1# ip route 172.16.2.0 255.255.255.240 172.16.0.2 113 R2# ip route 172.16.1.0 255.255.255.0 172.16.0.1 114
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'F', 'B', '5')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. R1# ip route 172.16.2.0 255.255.255.240 172.16.0.5 89 R2# ip route 172.16.1.0 255.255.255.0 172.16.0.6 89
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'G', 'B', '5')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. R1# ip route 172.16.2.0 255.255.255.248 172.16.0.5 110 R2# ip route 172.16.1.0 255.255.255.0 172.16.0.6 110
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'H', 'B', '5')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. R1# ip route 172.16.2.0 255.255.255.224 172.16.0.6 111 R2# ip route 172.16.1.0 255.255.255.0 172.16.0.5 112 Correct Answer: D
+                        </button>
+                    </td><td><input type="checkbox" id="mark_5"></td></tr><tr><td id="ans_col_6" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">What is a function of a Next-Generation IPS?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '6')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. makes forwarding decisions based on learned MAC addresses
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '6')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. serves as a controller within a controller-based network
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '6')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. integrates with a RADIUS server to enforce Layer 2 device authentication rules
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'D', '6')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. correlates user activity with network events Correct Answer: D --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_6"></td></tr><tr><td id="ans_col_7" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which 2 technology's are recommended from cisco for multiple branch offices and large scale deployment? (Choose two)</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'A', '7')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. GETVPN
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'A', '7')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. SITE TO SITE VPN
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'A', '7')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. CLIENTLESS VPN
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'A', '7')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. IPSEC REMOTE ACCESS E. DMVPN Correct Answer:AE --[PAGE_BREAK]-- Wireless Protection’ APolleied®. aonees --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_7"></td></tr><tr><td id="ans_col_8" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which REST method updates an object in the Cisco DNA Center Intent API?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '8')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. CHANGE
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '8')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. UPDATE
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '8')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. POST
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'D', '8')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. PUT Correct Answer: D
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_8"></td></tr><tr><td id="ans_col_9" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which two practices are recommended for an acceptable security posture in a network? (Choose two)</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'B', '9')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. Backup device configurations to encrypted USB drives for secure retrieval
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'B', '9')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. Maintain network equipment in a secure location
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'B', '9')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. Use a cryptographic keychain to authenticate to network devices
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'B', '9')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. Place internal email and file servers in a designated DMZ E. Disable unused or unnecessary ports, interfaces and services Correct Answer: BE --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_9"></td></tr><tr><td id="ans_col_10" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">An administrator must use the password complexity not manufacturer- name command to prevent users from adding “cisco” as a password. Which command must be issued before this command?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'A', '10')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. Password complexity enable
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'A', '10')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. confreg 0x2142
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'A', '10')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. Login authentication my-auth-list
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'A', '10')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. service password-encryption Correct Answer: A
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_10"></td></tr><tr><td id="ans_col_11" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which of the following is the JSON encoding of a dictionary or hash?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'A', '11')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. {"key”:"value”}
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'A', '11')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. [“key”,"value”]
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'A', '11')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. {“key”,’value”}
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'A', '11')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. (“key”:"value”) Correct Answer: A --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_11"></td></tr><tr><td id="ans_col_12" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which two REST API status-code classes represent errors? (Choose two.)</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '12')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. 1XX
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '12')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. 2XX
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '12')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. 3XX
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'D', '12')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. 4XX E. 5XX Correct Answer: DE
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_12"></td></tr><tr><td id="ans_col_13" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">When the active router in an HSRP group fails. which router assumes the role and forwards packets?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'C', '13')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. listening
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'C', '13')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. backup
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'C', '13')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. standby
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'C', '13')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. forwarding Correct Answer: C --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_13"></td></tr><tr><td id="ans_col_14" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">How does authentication differ from authorization?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'C', '14')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. Authentication is used to verify a person's identity; and authorization is used to create syslog messages for log ins.
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'C', '14')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. Authentication is used to determine what resources a user is allowed to access, and authorization is used to track what equipment is allowed access to the network.
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'C', '14')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. Authentication verifies the identity of a person accessing a network, and authorization determines what resource a user can access.
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'C', '14')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. Authentication is used to record what resource a user accesses, and authorization is used to determine what resources a user can access. Correct Answer: C
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_14"></td></tr><tr><td id="ans_col_15" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">What is the purpose of the Cisco DNA Center controller?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'A', '15')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. to securely manage and deploy network devices
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'A', '15')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. to provide Layer 3 services to autonomous access points
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'A', '15')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. to secure physical access to a data center
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'A', '15')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. to scan a network and generate a Layer 2 network diagram Correct Answer: A --[PAGE_BREAK]-- RID: 192. 168, 24. alee 492: 168: 2.8: ‘BDR: --[PAGE_BREAK]--
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'E', 'A', '15')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. R2(config)#router ospf 1 R2(config-router)#router-id 10.100.100.100
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'F', 'A', '15')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. R2(config)#router ospf 1 R2(config-router)#router-id 192.168.2.7
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'G', 'A', '15')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. R2(config)#interface gi0/0 R2(config-if)#ip ospf priority 100
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'H', 'A', '15')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. R2(config)#interface gi0/0 R2(config-if)#ip ospf priority 1 Correct Answer: C --[PAGE_BREAK]-- 025: "40.0:4.0724 --[PAGE_BREAK]--
+                        </button>
+                    </td><td><input type="checkbox" id="mark_15"></td></tr><tr><td id="ans_col_16" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which two characteristics describe the access layer in a three-tier network architecture? (Choose two)</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'C', '16')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. Designed to meet continuous, redundant uptime requirements
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'C', '16')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. Provides a boundary between layer 2 and layer 3 communications
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'C', '16')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. Layer at which a wireless access point connects to the wired network
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'C', '16')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. Serves as the network aggregation point E. Physical connection point for a LAN printer Correct Answer: CE
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_16"></td></tr><tr><td id="ans_col_17" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">What are the two examples of multifactor authentication? (Choose two)</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '17')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. single sign-on
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '17')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. Shared password repository
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '17')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. Passwords that expire
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'D', '17')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. unique user knowledge E. soft tokens Correct Answer: DE --[PAGE_BREAK]-- interface Fastethernet1/0 ip. Addréss'10.88:31.127°255:255:255:192! --[PAGE_BREAK]-- interface FastEthernet1/0 ip address 10.88.31.126 255.255.255.240 R8# interface FastEthernet0/0 ip address 10.19.63.94 255.255.255.192 R9O# interface FastEthernet1/1 ip address 10.23.98.158 255.255.255.248
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'E', 'D', '17')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. R7# interface FastEthernet1/0 ip address 10.88.31.127 255.255.255.240 R8# interface FastEthernet0/0 ip address 10.19.63.95 255.255.255.192 R9O# interface FastEthernet1/1 ip address 10.23.98.159 255.255.255.248
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'F', 'D', '17')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. R7# interface FastEthernet1/0 ip address 10.88.31.126 255.255.255.192 R8# interface FastEthernet0/0 ip address 10.19.63.94 255.255.255.240 R9# interface FastEthernet1/1 ip address 10.23.98.158 255.255.255.224 Correct Answer: D --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td><input type="checkbox" id="mark_17"></td></tr><tr><td id="ans_col_18" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which enhancement is implemented in WPA3?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '18')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. applies 802.1x authentication
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '18')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. uses TKIP
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '18')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. employs PKI to identify access points
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'D', '18')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. protects against brute force attacks Correct Answer: D
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_18"></td></tr><tr><td id="ans_col_19" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which per-hop traffic control feature does an ISP implement to mitigate the potential negative effects of a customer exceeding its committed bandwidth?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'B', '19')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. marking
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'B', '19')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. policing
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'B', '19')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. Shaping
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'B', '19')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. Queuing Correct Answer: B
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_19"></td></tr><tr><td id="ans_col_20" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which device separates networks by security domains?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'C', '20')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. Intrusion protection system
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'C', '20')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. access point
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'C', '20')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. firewall
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'C', '20')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. wireless controller Correct Answer: C --[PAGE_BREAK]-- D:A0°56 28: A9 Correct ‘Answer? B - --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_20"></td></tr><tr><td id="ans_col_21" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which QoS queuing method discards or marks packets that exceed the desired bit rate of traffic flow?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '21')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. shaping
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '21')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. CBWFQ Cc. LLQ
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '21')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. policing Correct Answer: D 034: . Ethernet0/: 3. Correct Answer:,D: --[PAGE_BREAK]-- --[PAGE_BREAK]-- --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_21"></td></tr><tr><td id="ans_col_22" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Refer to the exhibit. The given Windows PC is requesting the IP address of the host at www.cisco.com. To which IP address is the request sent? Media State : Media disconnected Connection-specitic DNS Suttix 3 Description : Realtek PCIE GBE Family Controller Physical Address : 3C-52-82-33-F3-8F DHCP Enabled : Autoconfiguration Enabled Wireless LAN adapter Wi-Fi;| Connection-specific ONS Suffix . : arcep.se Description : Intel(R) Dual Band Wireless-AC 7265 Physical Address : C8+21-58-84-F3-EF DHCP Enabled Autoconfiguration Enabled Link-local IPv6 Address IPv4. Address : .1.226(Preferred) Subnet Mask H 255.6 Lease Obtained Lease Expires Default Gateway : -1.106 DHCP Server : -1.254 DHCPv6 IAID : 46670168 DHCPv6 Client DUID : @@-01-066-@1-20-F7-05-55-3C-52-82-33-D3-84 ONS Servers + 192.168.1.253 NetBIOS over Tcpip : Enabled Connection-specific ONS Suffix : Search List : arcep.se cna. me</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '22')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. 192.168.1.226
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '22')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. 192.168.1.100
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '22')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. 192.168.1.254
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'D', '22')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. 192.168.1.253 Correct Answer: D --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_22"></td></tr><tr><td id="ans_col_23" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">What provides centralized control of authentication and roaming In an enterprise network?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'C', '23')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. a lightweight access point
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'C', '23')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. a firewall
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'C', '23')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. a wireless LAN controller
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'C', '23')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. a LAN switch Correct Answer: C
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_23"></td></tr><tr><td id="ans_col_24" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Why would VRRP be implemented when configuring a new subnet in a multivendor environment?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'B', '24')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. when a gateway protocol is required that supports more than two Cisco devices for redundancy
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'B', '24')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. to interoperate normally with all vendors and provide additional security features for Cisco devices
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'B', '24')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. to ensure that the spanning-tree forwarding path to the gateway is loop-free
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'B', '24')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. to enable normal operations to continue after a member failure without requiring a change in a host ARP cache Correct Answer: B --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_24"></td></tr><tr><td id="ans_col_25" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">An engineer is configuring SSH version 2 exclusively on the R1 router. What is the minimum configuration required to permit remote management using the cryptographic protocol?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'A', '25')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. hostname R1 ip domain name cisco crypto key generate rsa general-keys modulus 1024 username cisco privilege 15 password 0 cisco123 ip ssh version 2 line vty 0 15 transport input ssh login local
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'A', '25')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. hostname R1 crypto key generate rsa general-keys modulus 1024 username cisco privilege 15 password 0 cisco123 ip ssh version 2 line vty 0 15 transport input all login local
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'A', '25')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. hostname R1 --[PAGE_BREAK]-- service password-encryption crypto key generate rsa general-keys modulus 1024 username cisco privilege 15 password 0 cisco123 ip ssh version 2 line vty 0 15 transport input ssh login local
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'A', '25')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. hostname R1 ip domain name cisco crypto key generate rsa general-keys modulus 1024 username cisco privilege 15 password 0 cisco123 ip ssh version 2 line vty 0 15 transport input all login local Correct Answer: A --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_25"></td></tr><tr><td id="ans_col_26" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">After a recent security breach and a RADIUS failure, an engineer must secure the console port of each enterprise router with a local username and password. Which configuration must the engineer apply to accomplish this task?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'A', '26')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. username localuser secret plaintextpassword line con 0 no login local privilege level 15
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'A', '26')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. aaa new-model line con 0 password plaintextpassword privilege level 15
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'A', '26')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. aaa new-model aaa authorization exec default local aaa authentication login default radius username localuser privilege 15 secret plaintextpassword
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'A', '26')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. username localuser secret plaintextpassword line con 0 login authentication default privilege level 15 Correct Answer: A --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_26"></td></tr><tr><td id="ans_col_27" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">A network engineer is replacing the switches that belong to a managed- services client with new Cisco Catalyst switches. The new switches will be configured for updated security standards, including replacing Telnet services with encrypted connections and doubling the modulus size from 1024. Which two commands must the engineer configure on the new switches? (Choose two.)</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '27')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. crypto key generate rsa general-keys modulus 1024
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '27')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. transport input all
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '27')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. crypto key generate rsa usage-keys
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'D', '27')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. crypto key generate rsa modulus 2048 E. transport Input ssh Correct Answer: DE --[PAGE_BREAK]-- Correct: Answer --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_27"></td></tr><tr><td id="ans_col_28" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Refer to the exhibit. What is represented by "Ri" and "SW1" within the JSON output? { *Routers” : E"R1" ’ “R2" ’ "R3"] ’ "Switches": ["SWL","SW2", "SH3" ] } A, array</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'B', '28')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. value
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'B', '28')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. object
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'B', '28')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. key Correct Answer: B 044, Which command do you enter so that a switch configured with Rapid PVST+ listens and learns for a specific time period?
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'B', '28')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. spanning-tree vlan 1 max-age 6
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'E', 'B', '28')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. spanning-tree vlan 1 hello-time 10
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'F', 'B', '28')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. spanning-tree vlan 1 priority 4096
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'G', 'B', '28')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. spanning-tree vlan 1 forward-time 20 Correct Answer: D --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td><input type="checkbox" id="mark_28"></td></tr><tr><td id="ans_col_29" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">What is the function of “off-the-shelf” switches in a controller-based network?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'B', '29')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. providing a central view of the deployed network
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'B', '29')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. forwarding packets
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'B', '29')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. making routing decisions
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'B', '29')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. setting packet-handling policies Correct Answer: B
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_29"></td></tr><tr><td id="ans_col_30" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">What is a function of Cisco Advanced Malware Protection for a Next- Generation IPS?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'B', '30')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. authorizing potentially compromised wireless traffic
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'B', '30')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. inspecting specific files and file types for malware
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'B', '30')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. authenticating end users
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'B', '30')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. URL filtering Correct Answer: B --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_30"></td></tr><tr><td id="ans_col_31" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Refer to the exhibit. What is represented beginning with line 1 and ending with line 5? { “switch”: “3750”, “port”: e2 }, ~ { “router”: “2951”, “port”: e20 }. { “switch”: "3750", “port”: 23 }, ] 4 2 3 4 5</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '31')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. object
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '31')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. value
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '31')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. key
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'D', '31')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. array Correct Answer: D
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_31"></td></tr><tr><td id="ans_col_32" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">What are two southbound APIs? (Choose two.)</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '32')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. Thrift
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '32')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. DSC Cc. CORBA
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '32')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. NETCONF E. OpenFlow Correct Answer: DE --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_32"></td></tr><tr><td id="ans_col_33" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Where is the interface between the control plane and data plane within the software-defined architecture?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '33')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. application layer and the management layer
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '33')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. application layer and the infrastructure layer
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '33')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. control layer and the application layer
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'D', '33')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. control layer and the infrastructure layer Correct Answer: D
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_33"></td></tr><tr><td id="ans_col_34" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which plane is centralized by an SDN controller?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '34')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. management-plane
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '34')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. data-plane
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '34')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. services-plane
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'D', '34')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. control-plane Correct Answer: D
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_34"></td></tr><tr><td id="ans_col_35" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which protocol is used in Software Defined Access (SDA) to provide a tunnel between two edge nodes in different fabrics?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'C', '35')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. Generic Router Encapsulation (GRE)
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'C', '35')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. Virtual Local Area Network (VLAN)
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'C', '35')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. Virtual Extensible LAN (VXLAN)
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'C', '35')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. Point-to-Point Protocol (PPP) Correct Answer: C --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_35"></td></tr><tr><td id="ans_col_36" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which JSON data type is an unordered set of attribute-value pairs?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '36')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. string
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '36')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. array
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '36')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. Boolean
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'D', '36')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. object Correct Answer: D
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_36"></td></tr><tr><td id="ans_col_37" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">How will Link Aggregation be implemented on a Cisco Wireless LAN Controller?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '37')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. The EtherChannel must be configured in “mode active”.
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '37')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. To pass client traffic, two or more ports must be configured.
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '37')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. When enabled, the WLC bandwidth drops to 500 Mbps.
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'D', '37')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. One functional physical port is needed to pass client traffic. Correct Answer: D --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_37"></td></tr><tr><td id="ans_col_38" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Refer to the exhibit. An engineer is configuring a Layer 3 port-channel interface with LACP. The configuration on the first device is complete, and it is verified that both interfaces have registered the neighbor device in the CDP table. Which task on the neighbor device enables the new port channel to come up without negotiating the channel? dinterfaca g2/0/0 channol-group 1 mode activa interface 94/0/0 channel-group 2 mode activa interface Port-channell ip address 203.0.113.65 255.255.255.252 SLINEPROTO-5-UPDOWN: Line protocol on Interface Port-channell, changed state to down</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'B', '38')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. Bring up the neighboring interfaces using the no shutdown command
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'B', '38')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. Modify the static EtherChannel configuration of the device to passive mode
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'B', '38')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. Change the EtherChannel mode on the neighboring interfaces to auto
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'B', '38')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. Configure the IP address of the neighboring device Correct Answer: B --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_38"></td></tr><tr><td id="ans_col_39" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Refer to the exhibit. Which outcome is expected when PC_A sends data to PC_B after their initial communication?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'C', '39')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. The source MAC address is changed.
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'C', '39')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. The destination MAC address is replaced with ffff.fftf.ffff.
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'C', '39')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. The source and destination MAC addresses remain the same.
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'C', '39')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. The switch rewrites the source and destination MAC addresses with its own. Correct Answer: C --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_39"></td></tr><tr><td id="ans_col_40" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">What is the binary pattern of unique ipv6 unique local address?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'B', '40')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. 00000000
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'B', '40')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. 11111100
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'B', '40')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. 11111111
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'B', '40')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. 11111101 Correct Answer: B
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_40"></td></tr><tr><td id="ans_col_41" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which three statements about MAC addresses are correct? (Choose three.)</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'A', '41')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. To communicate with other devices on a network, a network device must have a unique MAC address
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'A', '41')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. The MAC address is also referred to as the IP address
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'A', '41')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. The MAC address of a device must be configured in the Cisco [OS CLI by a user with administrative privileges
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'A', '41')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. A MAC address contains two main components, the first of which identifies the manufacturer of the hardware and the second of which uniquely identifies the hardware E. An example of a MAC address is 0A:26:B8:D6:65:90 F. A MAC address contains two main components, the first of which identifies the network on which the host resides and the second of which uniquely identifies the host on the network Correct Answer: ADE --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_41"></td></tr><tr><td id="ans_col_42" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which two goals reasons to implement private IPv4 addressing on your network? (Choose two.)</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'B', '42')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. Comply with PC] regulations
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'B', '42')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. Conserve IPv4 address
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'B', '42')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. Reduce the size of the forwarding table on network routers
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'B', '42')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. Reduce the risk of a network security breach E. Comply with local law Correct Answer: BD
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_42"></td></tr><tr><td id="ans_col_43" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which command is used to enable LLDP globally on a Cisco IOS ISR?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'A', '43')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. IIdp run
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'A', '43')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. IIdp enable
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'A', '43')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. IIdp transmit
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'A', '43')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. cdp run E. cdp enable Correct Answer: A --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_43"></td></tr><tr><td id="ans_col_44" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">What occurs when PortFast is enabled on an interface that is connected to another switch?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '44')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. Root port choice and spanning-tree recalculation are accelerated when a switch link goes down.
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '44')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. After spanning-tree converges, PortFast shuts down any port that receives BPDUs.
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '44')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. VTP is allowed to propagate VLAN configuration information from switch to switch automatically.
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'D', '44')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. Spanning-tree fails to detect a switching loop increasing the likelihood of broadcast storms. Correct Answer: D --[PAGE_BREAK]-- --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_44"></td></tr><tr><td id="ans_col_45" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Refer to the exhibit. How many JSON objects are represented? “SuW1i": ["“Ten-GigabitEtherneta@/e", "SW2": ["Ten-GigabitEthernet@/o", “SwW3":["“Ten-GigabitEthernete/e", "SW4": ["Ten-GigabitEthernet@/e", “Ten-GigabitEthernet@/1"], "Ten-GigabitEthernet@/1"], “Ten-GigabitEthernete/1"], “Ten-GigabitEthernet0/1"]</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'C', '45')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. 2
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'C', '45')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. 4
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'C', '45')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. 1
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'C', '45')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. 3 Correct Answer: C --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_45"></td></tr><tr><td id="ans_col_46" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Refer to the exhibit. Which switch becomes the root of a spanning tree for VLAN 20 if all links are of equal speed?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'A', '46')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. SW1 = 24596 0018.184e.3c00
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'A', '46')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. SW2 = 28692 004a.14e5.4077
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'A', '46')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. SW3 = 32788 0022.55cf.dd00
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'A', '46')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. SW4 = 64000 0041.454d.407f Correct Answer: A
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_46"></td></tr><tr><td id="ans_col_47" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">When should an engineer implement a collapsed-core architecture?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'A', '47')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. for small networks with minimal need for growth
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'A', '47')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. the access and distribution layers must be on the same device
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'A', '47')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. for large networks that are connected to multiple remote sites
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'A', '47')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. only when using VSS technology Correct Answer: A --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_47"></td></tr><tr><td id="ans_col_48" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Refer to the exhibit. An engineer configures interface fa0/1 on SW1 and SW2 to pass traffic from two different VLANs. For security reasons, company policy requires the native VLAN to be set to a non-default value. Which configuration must be used? | . VLAN 100 [cea] 7 &lt;= a) | fo/2 LE) Lz) tt f0/1 for | £013 --[PAGE_BREAK]--</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '48')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. Switch(config-if)#switchport mode access Switch(config-if)#switchport trunk encapsulation dot1q Switch(config-if)#switchport access vlan 100, 105 Switch(config-if)#switchport trunk native vlan 3
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '48')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. Switch(config-if)#switchport mode dynamic Switch(config-if)#switchport access vlan 100, 105 Switch(config-if)#switchport trunk native vlan 1
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '48')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. Switch(config-if)#switchport mode trunk Switch(config-if)#switchport trunk encapsulation dot1q Switch(config-if)#switchport trunk allowed vlan 100, 105 Switch(config-if)#switchport trunk native vlan 1
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'D', '48')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. Switch(config-if)#switchport mode trunk Switch(config-if)#switchport trunk encapsulation dot1q Switch(config-if)#switchport trunk allowed vlan 100, 105 Switch(config-if)#switchport trunk native vlan 3 Correct Answer: D --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_48"></td></tr><tr><td id="ans_col_49" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">What is the difference between 1000BASE-LX/LH and 1000BASE-ZX interfaces?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'A', '49')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. 1000BASE-LX/LH is supported on links up to 10km, and 1000BASE- ZX operates over links up to 70 km
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'A', '49')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. 1000BASE-LX/LH interoperates with multimode and single-mode fiber, and 1000BASE-ZX needs a conditioning patch cable with a multimode
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'A', '49')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. 1000BASE-ZX is supported on links up to 1000km, and 1000BASE- LX/LH operates over links up to 70 km
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'A', '49')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. 1000BASE-ZX interoperates with dual-rate 100M/1G 10Km SFP over multimode fiber, and 1000BASE-LX/LH supports only single-rate Correct Answer: A
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_49"></td></tr><tr><td id="ans_col_50" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which SDN plane forwards user-generated traffic?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'A', '50')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. data plane
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'A', '50')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. control plane
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'A', '50')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. management plane
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'A', '50')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. policy plane Correct Answer: A --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_50"></td></tr><tr><td id="ans_col_51" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">What is a function performed by a web server?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'C', '51')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. send and retrieve email from client devices
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'C', '51')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. authenticate and authorize a user's identity
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'C', '51')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. provide an application that is transmitted over HTTP
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'C', '51')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. securely store files for FTP access Correct Answer: C
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_51"></td></tr><tr><td id="ans_col_52" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">An administrator must use the passwords complexity not manufacturer- name command to prevent users from adding “Cisco” as a password. Which command must be issued before this command?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'B', '52')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. login authentication my-auth-list
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'B', '52')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. password complexity enable
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'B', '52')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. enable confreg 0x2142
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'B', '52')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. service password-encryption Correct Answer: B --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_52"></td></tr><tr><td id="ans_col_53" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">What are two differences between WPA2 and WPA3 wireless security? (Choose two.)</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'A', '53')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. WPAZ2 uses 128-bit key encryption, and WPA3 supports both128-bit and 192-bit key encryption
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'A', '53')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. WPA2 uses 192-bit key encryption, and WPA3 requires 256-bit key encryption
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'A', '53')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. WPAS3 uses AES for stronger protection than WPA2, which uses TKIP
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'A', '53')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. WPA3 uses AES for stronger protection than WPA2, which uses SAE E. WPA3 uses SAE for stronger protection than WPA2, which uses AES Correct Answer: AE --[PAGE_BREAK]--
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'E', 'A', '53')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. Select PSK under Authentication Key Management
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'F', 'A', '53')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. Select WPA+WPAZ2 on Layer 2 Security
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'G', 'A', '53')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. Select WPA Policy with TKIP Encryption
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'H', 'A', '53')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. Select 802.1x from under Authentication Key Management E. Select Static-WEP + 802. 1X on Layer 2 Security Correct Answer: BD --[PAGE_BREAK]--
+                        </button>
+                    </td><td><input type="checkbox" id="mark_53"></td></tr><tr><td id="ans_col_54" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">An engineer is configuring switch SW1 to act as an NTP server when all upstream NTP server connectivity fails. Which configuration must be used?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '54')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. SW1# config t SW1(config)#ntp backup SW11(config)#ntp server 192.168.1.1 B, SW1# config t SW1(config)#ntp server 192.168. 1.1 SW1(config)#ntp access-group server accesslist1
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '54')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. SW1# config t SW1(config)#ntp peer 192.168.1.1 SW1(config)#ntp access-group peer accesslist1
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '54')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. SW1# config t SW1(config)#ntp master SW11(config)#ntp server 192.168.1.1 Correct Answer: D
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_54"></td></tr><tr><td id="ans_col_55" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">How does TFTP operate in a network?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '55')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. provides secure data transfer
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '55')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. requires two separate connections for control and data traffic
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '55')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. relies on the well-known TCP port 20 to transmit data
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'D', '55')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. uses block numbers to identify and mitigate data-transfer errors Correct Answer: D --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_55"></td></tr><tr><td id="ans_col_56" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which two wireless security standards use Counter Mode Cipher Block Chaining Message Authentication Code Protocol for encryption and data integrity? (Choose two.)</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'C', '56')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. WPA
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'C', '56')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. WEP Cc. WPA2
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'C', '56')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. WPA3 E. Wi-Fi 6 Correct Answer: CD
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_56"></td></tr><tr><td id="ans_col_57" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">In an SDN architecture, which function of a network node is centralized on a controller?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'C', '57')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. provides protocol access for remote access devices
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'C', '57')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. discards a message due filtering
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'C', '57')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. makes a routing decision
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'C', '57')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. creates the IP routing table Correct Answer: C --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_57"></td></tr><tr><td id="ans_col_58" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">What is a benefit for external users who consume public cloud resources?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'A', '58')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. accessed over the Internet
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'A', '58')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. located in the same data center as the users
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'A', '58')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. all hosted on physical servers
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'A', '58')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. implemented over a dedicated WAN Correct Answer: A
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_58"></td></tr><tr><td id="ans_col_59" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">What is a feature of WPA?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'B', '59')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. 802.1x authentication
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'B', '59')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. TKIP/MIC encryption
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'B', '59')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. small Wi-Fi application
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'B', '59')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. preshared key Correct Answer: B --[PAGE_BREAK]-- Réfer'to: the exhibit. How!iiatiy Objects;are present tithe given JSON.,
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'E', 'B', '59')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. 1
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'F', 'B', '59')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. 4 C7
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'G', 'B', '59')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. 9 Correct Answer: D --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td><input type="checkbox" id="mark_59"></td></tr><tr><td id="ans_col_60" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Refer to the exhibit. The administrator must configure a floating static default route that points to 2001:db8:1234:2:1 and replaces the current default route only if it fails. Which command must the engineer configure on the CPE? CPE# show ipv6 route shortcut IPv6 Routing Table - default - 6 entries Codes: C - Connected, L - Local, S - Static, U - Per-user Static route 8 - BGP , HA - Home Agent, MR - Mobile Router, I R - RIP H - HNRP, I1 - ISIS Li, I2 - ISIS L2, IA - ISIS interarea IS - ISIS summary, D - EIGRP, EX ~ EIGRP external, NM ~ NEMO ND - Neighbor Discovery, 1 - LISP O - OSPF Intra, OL - OSPF Inter, OE1 ~ OSPF ext 1, OE2 ~ OSPF ext 2 ONL - OSPF NSSA ext 1, ON2 ~- OSPF NSSA ext 2 21/8 [2/0] via FE80:A8BB:CCFF:FE00:200, Ethernet0/o 2001:DB8:1234:1::/64 [2/0] via Ethernet@/0, directly connected 2001 :DB8:1234:1:ASBB:CCFF:FE00:160/128 [0/2] via Ethernet@/6, receive 20601:DB8:1234:2::/64 [0/6] via Ethernet@/1, directly connected 2001: DB8:1234:2:A8BB:CCFF:FE@@:116/128 [20/6] via Ethernet®0/l1, receive FFO6::/8 [0/8] vaa Nulle®, receive ccna.me</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '60')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. ipv6 route ::/0 2001:db8:1234:2::1 2
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '60')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. ipv6 route ::/0 2001:db8:1234:2::1 1
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '60')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. ipv6 route ::/128 2001:db8:1234:2:1 3
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'D', '60')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. ipv6 route ::/0 2001:db8:1234:2::1 3 Correct Answer: D --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_60"></td></tr><tr><td id="ans_col_61" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Refer to the exhibit. An OSPF neighbor relationship must be configured using these guidelines: e R1 is only permitted to establish a neighbor with R2. ° R1 will never participate in DR elections. © R1 will use a router-id of 10.1.1.1. Which configuration must be used? Fano Corse ‘40.100.1.0 2 ccna.me</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'C', '61')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. interface LoopbackO ip address 10.1.1.1 255.255.255.255 interface FastEthernet0/0 ip address10.100.1.1 255.255.255.252 ip ospf priority 0 ip access-group 102 in router ospf 10 log-adjacency-changes network 10.1.1.1 0.0.0.0 area 0 network 10.100.1.0 0.0.0.3 area 0 router-id 10.1.1.1 access-list 102 permit 88 host 10.100.1.2 host 224.0.0.5 access-list 102 deny 88 any any access-list 102 permit ip any any --[PAGE_BREAK]--
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'C', '61')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. interface LoopbackO ip address 10.1.1.1 255.255.255.255 interface FastEthernet0/0 ip address 10.100.1.1 255.255.255.252 ip ospf priority 100 ip access-group 102 in router ospf 10 log-adjacency-changes network 10.1.1.1 0.0.0.0 area 0 network 10.100.1.0 0.0.0.3 area 0 ospf router-id 10.1.1.1 access-list 102 permit 88 host 10.100.1.2 host 224.0.0.5 access-list 102 deny 88 any any access-list 102 permit ip any any
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'C', '61')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. interface FastEthernet0/0 ip address 10.100.1.1 255.255.255.252 ip ospf priority 0 ip access-group 102 in router ospf 10 log-adjacency-changes network 10.1.1.1 0.0.0.0 area 0 network 10.100.1.0 0.0.0.3 area 0 router-id 10.1. 1.1 access-list 102 permit 89 host 10.100.1.2 host 224.0.0.5 access-list 102 deny 89 any any access-list 102 permit ip any any --[PAGE_BREAK]--
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'C', '61')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. interface FastEthernet0/0 ip address 10.100.1.1 255.255.255.252 ip ospf priority 100 ip access-group 102 in router ospf 10 log-adjacency-changes network 10.1.1.1 0.0.0.0 area 0 network 10.100.1.0 0.0.0.3 area 0 ospf router-id 10.1.1.1 access-list 102 permit 89 host 10.100.1.2 host 224.0.0.5 access-list 102 deny 89 any any access-list 102 permit ip any any Correct Answer: C --[PAGE_BREAK]-- Refer’ to;the: exhibit. IPG i isbai mplenentéd: withir the? eiiterprisé:. --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_61"></td></tr><tr><td id="ans_col_62" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Refer to the exhibit. The network administrator must prevent the switch Cat9K-2 IP address from being visible in LLDP without disabling the protocol. Which action must be taken to complete the task? Cat9K-1§ show lldp entry Cat9K~-2 Local Intf: Gi1/0/21 Chassis id: 308b.b2b3.2880 Port id: Gi1/0/21 Port Description: GigabitEthernatl1/0/21 System Name: Cat9K-2 Managoment Addrossas; IP: 10.5,.110.2</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'B', '62')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. Configure the no Ildp transmit command on interface G1/0/21 on Cat9K-1
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'B', '62')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. Configure the no Ildp tlyv-select management-address command globally on Cat9K-2
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'B', '62')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. Configure the no Ildp mac-phy-cfg command globally on Cat9K-2
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'B', '62')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. Configure the no Ildp receive command on interface G1/0/21 on Cat9K-1 Correct Answer: B --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_62"></td></tr><tr><td id="ans_col_63" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">What is a function of spine-and-leaf architecture?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'C', '63')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. exclusively sends multicast traffic between servers that are directly connected to the spine
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'C', '63')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. limits payload size of traffic within the leaf layer
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'C', '63')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. offers predictable latency of the traffic path between end devices
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'C', '63')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. mitigates oversubscription by adding a layer of leaf switches Correct Answer: C Corréct:Answer=:C --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_63"></td></tr><tr><td id="ans_col_64" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">0.1.0/24 10.0.2.0/24 --[PAGE_BREAK]--</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'A', '64')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. interface gigabitethernet0/0 ip address 10.0.0.34 255.255.255.224 ip ospf priority 100
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'A', '64')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. interface gigabitethernet0/0 ip address 10.0.1.1 255.255.255.0 ip ospf priority 255
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'A', '64')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. interface gigabitethernet0/0 ip address 10.0.0.34 255.255.255.248 ip ospf priority 0
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'A', '64')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. interface gigabitethernet0/0 ip address 10.0.1.1 255.255.255.224 ip ospf priority 98 Correct Answer: A --[PAGE_BREAK]-- ‘G:SW3 2788'0022;55¢f:dd00 Di.SW4.="64000;0041.454d:407F Correctianswer:B
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_64"></td></tr><tr><td id="ans_col_65" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which type of address is shared by routers in a HSRP implementation and used by hosts on the subnet as their default gateway address?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'A', '65')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. virtual IP address
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'A', '65')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. multicast address
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'A', '65')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. broadcast address
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'A', '65')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. loopback IP address Correct Answer: A --[PAGE_BREAK]-- ‘Ae255:255.255; 248! 'Bi:255:255:255°128: Correct:Answer:'A, --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_65"></td></tr><tr><td id="ans_col_66" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Refer to the exhibit. What is the next step to complete the implementation for the partial NAT configuration shown? CPE1# show protocols e0/1 Ethernet0/1 is up, line protocol is up Internet address is 10. 0.12. 2/24 CPE1# show ip access-list LAN Standard Ip access [ist LAN 10 permit 10.0.12.0. wildcard bits 0.0.0. 255 CPE1# show ip nat translations CPE1# show ip nat statistics Total active translations: 0 (0 static, 0 dynamic, 0 extended) Peak translations: 0 Outside interfaces: Inside interfaces: Ethernet0/1 Hits: 0 Nisses: 0 CEF Translated packets: 0, CEF Punted packets: 0 Expired translations:0 Dynamic mappings: —- Inside Source {ld: 1] access-list LAN pool NATPOOL refcount 0 nool NATPOOL: netmask 255. 255. 255. 0 start 198.51.100.11 end 198.51. 100. 20 type generic, total addresses 10, allocated 0 (0%), misses 0 Total doors: 0 Appi doors: 0 Normal doors:0 Queued Packets:0</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'D', '66')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. Modify the access list for the internal network on e0/1
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'D', '66')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. Apply the ACL to the pool configuration
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'D', '66')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. Reconfigure the static NAT entries that overlap the NAT pool
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'D', '66')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. Configure the NAT outside interface Correct Answer: D --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_66"></td></tr><tr><td id="ans_col_67" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Refer to the exhibt. A network adminstator is configung a router for user access va SSH. The service password encryption command has been issued. Router#conf t Enter configuration commands, one per line. End with CNTL/Z Router(config)#host name RL Ri(config)#ip domain-name CC-Net.com R1(config)#enable secret Pass fornewuser Ri(config)#line vty 0 15 Ri(config-line)#transport input ssh R1(config-line)#login local The configuration must meet these equirements, e Create the usemame as CCUser e Create the password as NA!2$cc e Encrypt the user password What must be configured to meet the requrements?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'B', '67')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. username CCUser privilege 15 password NA!2$cc enable secret 0 NA!2$cc
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'B', '67')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. username CCUser secret NA!2$cc
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'B', '67')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. username CCUser privilege 10 password NA!2$cc
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'B', '67')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. username CCUser password NAI2$cc enable password level 5 NA!2$cc Correct Answer: B --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_67"></td></tr><tr><td id="ans_col_68" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">0.15.0/24 ecna.me</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'B', '68')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. ip route 10.0.15.0 255.255.255.192 10.0.20.1
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'B', '68')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. ip route 10.0.15.0 255.255.255.0 10.0.20.3
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'B', '68')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. ip route 10.0.15.0 255.255.255.0 10.0.20.1
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'B', '68')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. ip route 10.0.0.64 255.255.255.192 10.0.20.3 Correct Answer: B --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_68"></td></tr><tr><td id="ans_col_69" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Which WLC interface provides out-of-band management in the Cisco Unified Wreless Network Architecture?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'C', '69')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. virtual
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'C', '69')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. dynamic
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'C', '69')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. service port
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'C', '69')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. AP-Manager Correct Answer: C
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_69"></td></tr><tr><td id="ans_col_70" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">What is a function of MAC learning on a switch?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'A', '70')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. A static MAC address is manually added to the MAC table
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'A', '70')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. MAC address learning is disabled by default on all VLANs
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'A', '70')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. Frames received for a destination MAC address not listed in the address table are dropped
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'A', '70')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. The MAC address table is used to populate the ARP table Correct Answer: A --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_70"></td></tr><tr><td id="ans_col_71" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">RétéF' to the eKhbitdANs formsian’ OSPF singlezaré bor'relatoriship:wth:R2, Which command:sequence:must be implemented to:configure the: --[PAGE_BREAK]--</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'C', '71')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. router ospf 100 network 10.0.0.0 0.0.0.252 area 0 network 10.0.1.0 0.0.0.255 area 0
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'C', '71')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. router ospf 10 network 10.0.0.0 0.0.0.3 area 0 network 10.0.2.0 0.0.0.255 area 0
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'C', '71')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. router ospf 10 network 10.0.0.0 0.0.0.3 area 0 network 10.0.1.0 0.0.0.255 area 0
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'C', '71')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. router ospf 100 network 10.0.0.0 0.0.0.3 area 0 network 10.0.2.0 255.255.255.0 area 0 Correct Answer: C
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_71"></td></tr><tr><td id="ans_col_72" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">What are the two functions of SSIDs? (Choose two.)</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'A', '72')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. uses the maximum of 32 alphanumeric characters
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'A', '72')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. controls the speed of the Wi-Fi network
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'A', '72')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. used exclusively with controller-based Wi-Fi networks
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'A', '72')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. supports a single access point E. broadcasts by default Correct Answer: AE --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_72"></td></tr><tr><td id="ans_col_73" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">Refer to the exhibit. An engineer is configuring a new Cisco switch, NewSw, to replace SW2. The details have been provided: e Switches SW1 and SW2 are third-party devices without support for trunk ports. © The existing connections must be maintained between PC1, PC2, and PC3. © Allow the switch to pass traffic from future VLAN 10. Which configuration must be applied? =| Vian 2 i 2 az foi —«*f0/0 ay —) =, a om me (I Vian 10 i a Vian 10 _——¥4 2 NewSW sWi#tshow interface interface FastEthernet0/0 switchport access vlan 2 switchport mode access --[PAGE_BREAK]--</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'C', '73')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. NewSW(config)#interface f0/0 NewSW (config-if)#switchport mode access NewSW (config-if)#switchport trunk allowed vlan 2, 10 NewSW (config-if)#switchport trunk native vlan 2
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'C', '73')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. NewSW(config)#interface f0/0 NewSW((config-if)#switchport mode trunk NewSW (config-if)#switchport trunk allowed vlan 10 NewSW (config-if)#switchport trunk native vlan 10
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'C', '73')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. NewSW(config)#interface f0/0 NewSW((config-if)#switchport mode trunk NewSWiconfig-if)#switchport trunk allowed vlan 2, 10 NewSW (config-if)#switchport trunk native vlan 2
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'C', '73')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. NewSW(onig)#interface f0/0 NewSW (config-if)#switchport mode access NewSW (config-if)#switchport trunk allowed vian 2, 10 NewSW((config-if)#switchport truk native vlan 10 Correct Answer: C
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_73"></td></tr><tr><td id="ans_col_74" style="color: #aaa; font-style: italic;">🔒 隱藏</td><td class="question-text">What is the MAC address used with VRRP as a virtual address?</td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'A', 'C', '74')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            A. 00-07-C0-70-AB-01
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'B', 'C', '74')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            B. 00-00-0C-07-AD-89
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'C', 'C', '74')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            C. 00-00-5E-00-01-0a
+                        </button>
+                    </td>
+                    <td>
+                        <button onclick="checkAnswer(this, 'D', 'C', '74')" style="width: 100%; text-align: left; padding: 5px; cursor: pointer;">
+                            D. 00-05-42-90-74-81 Correct Answer: C --[PAGE_BREAK]--
+                        </button>
+                    </td><td></td><td></td><td></td><td></td><td><input type="checkbox" id="mark_74"></td></tr></tbody>
+    </table>
+
+    <script src="js/main.js"></script>
+
+</body></html>
